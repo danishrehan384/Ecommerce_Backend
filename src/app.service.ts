@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 export class AppService {
   getHello(): any {
     return {
-      message: "Hello Docker"
+      message: "Api is working fine & Health 100%"
     };
   }
 }

@@ -1,16 +1,25 @@
 version: '3.9'
 services:
   db: 
-    image: 'postgis/postgis:16-3.4'
+    image: 'mysql'
     container_name: apis_eb_db
     ports:
-      - 5432:5432
+      - 3306:3307
     environment: 
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=click123
-      - POSTGRES_DB=ecommerce_be
+      - MYSQL_ROOT_PASSWORD=mydb 
+      - MYSQL_DATABASE=ecommerce_be
+      - MYSQL_TCP_PORT=3307
     volumes:
-      - 'apis_postgres_data_eb:/var/lib/postgresql'
+      - 'apis_mysql_data_eb:/var/lib/mysql'
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    ports:
+      - 8080:80
+    environment:
+      - PMA_HOST=apis_eb_db
+      - PMA_PORT=3307    
 
   redis:
     container_name: apis_eb_redis
@@ -23,7 +32,7 @@ services:
       - 'apis_redis_data_eb:/bitnami'    
 
 volumes:
-    apis_postgres_data_eb:
+    apis_mysql_data_eb:
         external: true
     apis_redis_data_eb:
         external: true    
