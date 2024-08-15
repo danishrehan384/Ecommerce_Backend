@@ -9,7 +9,7 @@ import { UserRole } from 'utils/roles.enum';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
-export class UserEntitiy {
+export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

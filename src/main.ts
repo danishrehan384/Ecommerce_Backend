@@ -5,6 +5,11 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors({ origin: '*' });
+  app.setGlobalPrefix('api/v1');
+  const PORT = process.env.PORT || 3000;
+  app.useGlobalPipes(new ValidationPipe());
+
   const config = new DocumentBuilder()
     .setTitle('Cats example')
     .setDescription('The cats API description')
@@ -12,9 +17,7 @@ async function bootstrap() {
     .addTag('cats')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
-  const PORT = process.env.PORT || 3000;
-  app.useGlobalPipes(new ValidationPipe());
+  SwaggerModule.setup('/', app, document);
   await app.listen(3000, () => {
     console.log(
       `Api is running on port ${PORT} and MODE IS: ${process.env.NODE_ENV}`,

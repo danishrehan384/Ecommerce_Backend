@@ -1,7 +1,9 @@
-import { UserEntitiy } from "./user.entity";
+import { Logs } from "./logs.entity";
+import { User} from "./user.entity";
 
 const entites = [
-    UserEntitiy
+    User,
+    Logs
 ]
 
 export default entites;

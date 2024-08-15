@@ -1,20 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { CreateAdminDto, SerializeAdmin } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserEntitiy } from 'src/Entities/user.entity';
+import { User } from 'src/Entities/user.entity';
 import { IsNull, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from 'utils/roles.enum';
+import { ResponseService } from 'src/Shared/services/response.service';
+import { Request } from 'express';
 
 @Injectable()
 export class AdminService {
   constructor(
-    @InjectRepository(UserEntitiy)
-    private readonly _userRepo: Repository<UserEntitiy>,
+    @InjectRepository(User)
+    private readonly _userRepo: Repository<User>,
+    private readonly _res: ResponseService,
   ) {}
 
-  async create(body: CreateAdminDto) {
+  async create(body: CreateAdminDto, request: Request) {
     try {
       const { email, password, username } = body;
 
@@ -24,7 +27,12 @@ export class AdminService {
         .getOne();
 
       if (isAdminAlreadyExist)
-        return { message: 'This username OR email is already exist' };
+        return this._res.generateResponse(
+          HttpStatus.BAD_REQUEST,
+          'This email or username is already register',
+          null,
+          request,
+        );
 
       const salt = await bcrypt.genSalt(10);
       const hash = await bcrypt.hash(password, salt);
@@ -39,36 +47,47 @@ export class AdminService {
       const createAdmin = this._userRepo.create(payload);
       await this._userRepo.save(createAdmin);
 
-      return {
-        message: 'Admin is created successfully',
-      };
+      return this._res.generateResponse(
+        HttpStatus.OK,
+        'Admin is created successfully',
+        createAdmin,
+        request,
+      );
     } catch (error) {
-      console.log(error);
+      return this._res.generateError(error, request);
     }
   }
 
-  async findAll() {
+  async findAll(request: Request) {
     try {
-      return await this._userRepo.find({
+      const admin = await this._userRepo.find({
         where: {
-          deleted_at: IsNull()
-        }
+          deleted_at: IsNull(),
+        },
       });
+
+      console.log('request' + request);
+      return this._res.generateResponse(
+        HttpStatus.OK,
+        'Users list',
+        admin,
+        request,
+      );
     } catch (error) {
-      console.log(error.message);
+      return this._res.generateError(error, request);
     }
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, request: Request) {
     return await this._userRepo.findOne({
       where: {
         id: id,
-        deleted_at: IsNull()
+        deleted_at: IsNull(),
       },
     });
   }
 
-  async update(id: string, updateAdminDto: UpdateAdminDto) {
+  async update(id: string, updateAdminDto: UpdateAdminDto, request: Request) {
     try {
       const { email, password, username } = updateAdminDto;
       const User = await this._userRepo.findOne({
@@ -79,9 +98,12 @@ export class AdminService {
       });
 
       if (!User)
-        return {
-          message: 'User not found',
-        };
+        return this._res.generateResponse(
+          HttpStatus.BAD_REQUEST,
+          'User not found',
+          null,
+          request,
+        );
       const getUserByEmailOrUsername = await this._userRepo
         .createQueryBuilder('user')
         .where('(username = :username OR email =:email) AND id != :id', {
@@ -92,9 +114,12 @@ export class AdminService {
         .getOne();
 
       if (getUserByEmailOrUsername)
-        return {
-          message: 'This Username OR email is already register',
-        };
+        return this._res.generateResponse(
+          HttpStatus.BAD_REQUEST,
+          'This Username OR Email is already register',
+          null,
+          request,
+        );
 
       if (password) {
         const salt = await bcrypt.genSalt(10);
@@ -110,9 +135,12 @@ export class AdminService {
           .where('id = :id', { id })
           .execute();
 
-        return {
-          message: 'Admin is updated successfully',
-        };
+        return this._res.generateResponse(
+          HttpStatus.OK,
+          'Admin is updated successfully',
+          [],
+          request,
+        );
       }
 
       if (!password) {
@@ -126,14 +154,19 @@ export class AdminService {
           .where('id = :id', { id })
           .execute();
 
-        return {
-          message: 'Admin is updated successfully',
-        };
+        return this._res.generateResponse(
+          HttpStatus.OK,
+          'Admin is updated successfully',
+          [],
+          request,
+        );
       }
-    } catch (error) {}
+    } catch (error) {
+      return this._res.generateError(error, request);
+    }
   }
 
-  async remove(id: string) {
+  async remove(id: string, request: Request) {
     try {
       const user = await this._userRepo.findOne({
         where: {
@@ -143,10 +176,12 @@ export class AdminService {
       });
 
       if (!user)
-        return {
-          message: 'User not found',
-        };
-
+        return this._res.generateResponse(
+          HttpStatus.BAD_REQUEST,
+          'User not found',
+          null,
+          request,
+        );
       const deleteAdmin = await this._userRepo
         .createQueryBuilder('user')
         .update()
@@ -156,11 +191,14 @@ export class AdminService {
         .where('id = :id', { id })
         .execute();
 
-      return {
-        message: 'Admin is deleted successfully',
-      };
+      return this._res.generateResponse(
+        HttpStatus.OK,
+        'Admin is deleted successfully',
+        [],
+        request,
+      );
     } catch (error) {
-      console.log(error.message);
+      return this._res.generateError(error, request);
     }
   }
 }
