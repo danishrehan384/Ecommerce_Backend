@@ -5,13 +5,13 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { UserRole } from 'utils/user.enum';
+import { UserRole } from 'utils/roles.enum';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
 export class UserEntitiy {
   @PrimaryGeneratedColumn('uuid')
-  id: number;
+  id: string;
 
   @Column({
     default: '',
