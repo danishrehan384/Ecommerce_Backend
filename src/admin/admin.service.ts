@@ -62,14 +62,12 @@ export class AdminService {
     try {
       const admin = await this._userRepo.find({
         where: {
-          deleted_at: IsNull(),
+          role: UserRole.Admin,
         },
       });
-
-      console.log('request' + request);
       return this._res.generateResponse(
         HttpStatus.OK,
-        'Users list',
+        'Admins list',
         admin,
         request,
       );
@@ -79,12 +77,30 @@ export class AdminService {
   }
 
   async findOne(id: string, request: Request) {
-    return await this._userRepo.findOne({
-      where: {
-        id: id,
-        deleted_at: IsNull(),
-      },
-    });
+    try {
+      const admin = await this._userRepo.findOne({
+        where: {
+          id: id,
+          role: UserRole.Admin,
+        },
+      });
+
+      if (!admin)
+        return this._res.generateResponse(
+          HttpStatus.NOT_FOUND,
+          'Admin not found',
+          null,
+          request,
+        );
+      return this._res.generateResponse(
+        HttpStatus.OK,
+        'Admin Data',
+        admin,
+        request,
+      );
+    } catch (error) {
+      return this._res.generateError(error, request);
+    }
   }
 
   async update(id: string, updateAdminDto: UpdateAdminDto, request: Request) {
@@ -195,6 +211,55 @@ export class AdminService {
         HttpStatus.OK,
         'Admin is deleted successfully',
         [],
+        request,
+      );
+    } catch (error) {
+      return this._res.generateError(error, request);
+    }
+  }
+
+  async getAllUsers(request: Request) {
+    try {
+      const allUserList = await this._userRepo.find({
+        where: {
+          role: UserRole.Customer,
+          deleted_at: IsNull(),
+        },
+      });
+
+      return this._res.generateResponse(
+        HttpStatus.OK,
+        'Users List',
+        allUserList,
+        request,
+      );
+    } catch (error) {
+      return this._res.generateError(error, request);
+    }
+  }
+
+  async getUserByid(id: string, request: Request) {
+    try {
+      const getUser = await this._userRepo.findOne({
+        where: {
+          id: id,
+          role: UserRole.Customer,
+          deleted_at: IsNull(),
+        },
+      });
+
+      if (!getUser)
+        return this._res.generateResponse(
+          HttpStatus.NOT_FOUND,
+          'User not found',
+          null,
+          request,
+        );
+
+      return this._res.generateResponse(
+        HttpStatus.OK,
+        'Users List',
+        getUser,
         request,
       );
     } catch (error) {

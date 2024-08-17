@@ -7,6 +7,8 @@ import { AdminModule } from './admin/admin.module';
 import { CustomerModule } from './customer/customer.module';
 import { LoggerMiddleware } from './Shared/middleware/logger.middleware';
 import { AuthModule } from './Auth/auth.module';
+import { CategoryModule } from './category/category.module';
+import { BrandModule } from './brand/brand.module';
 
 @Module({
   imports: [
@@ -17,7 +19,9 @@ import { AuthModule } from './Auth/auth.module';
     DatabaseModule,
     AdminModule,
     CustomerModule,
-    AuthModule
+    AuthModule,
+    CategoryModule,
+    BrandModule
   ],
   controllers: [AppController],
   providers: [AppService],

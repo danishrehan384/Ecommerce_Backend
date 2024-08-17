@@ -57,4 +57,18 @@ export class AdminController {
   remove(@Param('id') id: string, @Request() req) {
     return this.adminService.remove(id, req);
   }
+
+  @ApiSecurity('JWT-auth')
+  @UseGuards(new RoleGuard(UserRole.Admin))
+  @Get('/all/user')
+  getAllUsers(@Request() req) {
+    return this.adminService.getAllUsers(req);
+  }
+
+  @ApiSecurity('JWT-auth')
+  @UseGuards(new RoleGuard(UserRole.Admin))
+  @Get('/all/user/:id')
+  getUserByid(@Param('id') id: string, @Request() req) {
+    return this.adminService.getUserByid(id, req);
+  }
 }
