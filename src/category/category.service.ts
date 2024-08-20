@@ -138,21 +138,25 @@ export class CategoryService {
   }
 
   async findCategoryByid(id: string, req: Request) {
-    const category = await this._catRepo.findOne({
-      where: {
-        id: id,
-        deleted_at: IsNull(),
-      },
-    });
+    try {
+      const category = await this._catRepo.findOne({
+        where: {
+          id: id,
+          deleted_at: IsNull(),
+        },
+      });
 
-    if (!category)
-      return this._res.generateResponse(
-        HttpStatus.NOT_FOUND,
-        'category not found',
-        null,
-        req,
-      );
+      if (!category)
+        return this._res.generateResponse(
+          HttpStatus.NOT_FOUND,
+          'category not found',
+          null,
+          req,
+        );
 
-    return category;
+      return category;
+    } catch (error) {
+      return this._res.generateError(error, req);
+    }
   }
 }

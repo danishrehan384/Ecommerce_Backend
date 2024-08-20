@@ -9,5 +9,6 @@ import { SharedModule } from 'src/Shared/shared.module';
   imports: [TypeOrmModule.forFeature([Category]), SharedModule],
   controllers: [CategoryController],
   providers: [CategoryService],
+  exports: [CategoryService]
 })
 export class CategoryModule {}

@@ -134,21 +134,25 @@ export class BrandService {
   }
 
   async findBrandByid(id: string, req: Request) {
-    const Brand = await this._brandRepo.findOne({
-      where: {
-        id: id,
-        deleted_at: IsNull(),
-      },
-    });
+    try {
+      const Brand = await this._brandRepo.findOne({
+        where: {
+          id: id,
+          deleted_at: IsNull(),
+        },
+      });
 
-    if (!Brand)
-      return this._res.generateResponse(
-        HttpStatus.NOT_FOUND,
-        'This Brand is not found',
-        null,
-        req,
-      );
+      if (!Brand)
+        return this._res.generateResponse(
+          HttpStatus.NOT_FOUND,
+          'This Brand is not found',
+          null,
+          req,
+        );
 
-    return Brand;
+      return Brand;
+    } catch (error) {
+      return this._res.generateError(error, req);
+    }
   }
 }

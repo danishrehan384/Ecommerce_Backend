@@ -9,6 +9,7 @@ import { LoggerMiddleware } from './Shared/middleware/logger.middleware';
 import { AuthModule } from './Auth/auth.module';
 import { CategoryModule } from './category/category.module';
 import { BrandModule } from './brand/brand.module';
+import { ProductModule } from './product/product.module';
 
 @Module({
   imports: [
@@ -21,7 +22,8 @@ import { BrandModule } from './brand/brand.module';
     CustomerModule,
     AuthModule,
     CategoryModule,
-    BrandModule
+    BrandModule,
+    ProductModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -4,10 +4,12 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Category } from './category.entity';
 import { Brand } from './brand.entity';
+import { ProductImage } from './product_images.entity';
 
 @Entity()
 export class Product {
@@ -21,8 +23,8 @@ export class Product {
   name: string;
 
   @Column({
+    type: 'longtext',
     nullable: false,
-    default: '',
   })
   description: string;
 
@@ -34,17 +36,10 @@ export class Product {
   price: number;
 
   @Column({
-    type: 'bigint',
     nullable: false,
-    default: 1,
+    default: 0,
   })
   stock: number;
-
-  @Column({
-    nullable: false,
-    default: '',
-  })
-  image_url: string;
 
   @CreateDateColumn({
     type: 'datetime',
@@ -61,6 +56,9 @@ export class Product {
     default: null,
   })
   deleted_at: Date;
+
+  @OneToMany(() => ProductImage, (productimage) => productimage.product)
+  images: ProductImage[];
 
   @ManyToOne(() => Category, (category) => category.product)
   @JoinColumn({ name: 'category_id' })
