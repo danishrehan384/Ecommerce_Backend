@@ -61,10 +61,8 @@ export class Product {
   images: ProductImage[];
 
   @ManyToOne(() => Category, (category) => category.product)
-  @JoinColumn({ name: 'category_id' })
   category: Category;
 
   @ManyToOne(() => Brand, (brand) => brand.product)
-  @JoinColumn({ name: 'brand_id' })
   brand: Brand;
 }

@@ -2,6 +2,7 @@ import {
   HttpStatus,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -13,10 +14,16 @@ import { Request } from 'express';
 import { ProductImage } from 'src/Entities/product_images.entity';
 import { Category } from 'src/Entities/category.entity';
 import { Brand } from 'src/Entities/brand.entity';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 @Injectable()
 export class ProductService {
   constructor(
     @InjectRepository(Product) private readonly _prodRepo: Repository<Product>,
+    @InjectRepository(Category) private readonly _catRepo: Repository<Category>,
+    @InjectRepository(Brand) private readonly _brandRepo: Repository<Brand>,
+    @InjectRepository(ProductImage)
+    private readonly _productImageRepo: Repository<ProductImage>,
     private readonly _res: ResponseService,
   ) {}
 
@@ -74,8 +81,8 @@ export class ProductService {
               description: description,
               price: price,
               stock: stock,
-              category_id: category,
-              brand_id: brand,
+              category: category,
+              brand: brand,
             };
 
             const createProduct = manager.create(Product, payload);
@@ -127,6 +134,17 @@ export class ProductService {
           brand: true,
           images: true,
         },
+        select: {
+          category: {
+            name: true,
+          },
+          brand: {
+            name: true,
+          },
+          images: {
+            image_url: true,
+          },
+        },
       });
 
       return this._res.generateResponse(
@@ -143,7 +161,6 @@ export class ProductService {
   async findOne(id: string, req: Request) {
     try {
       const getProduct = await this.findProductById(id, req);
-
       return this._res.generateResponse(
         HttpStatus.OK,
         'Product Details: ',
@@ -155,8 +172,107 @@ export class ProductService {
     }
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: string, updateProductDto: UpdateProductDto, req: Request) {
+    try {
+      const { brand_id, category_id, description, name, price, stock } =
+        updateProductDto;
+      const getProduct = await this.findProductById(id, req);
+      const getbrand = await this._brandRepo.findOne({
+        where: {
+          id: brand_id,
+          deleted_at: IsNull(),
+        },
+      });
+      const getCategory = await this._catRepo.findOne({
+        where: {
+          id: category_id,
+          deleted_at: IsNull(),
+        },
+      });
+      await this._prodRepo
+        .createQueryBuilder('product')
+        .update()
+        .set({
+          name: name,
+          description: description,
+          price: price,
+          stock: stock,
+          brand: getbrand,
+          category: getCategory,
+        })
+        .where('id = :id', { id })
+        .execute();
+
+      return this._res.generateResponse(
+        HttpStatus.OK,
+        'Product Updated Successfully',
+        [],
+        req,
+      );
+    } catch (error) {
+      return this._res.generateError(error, req);
+    }
+  }
+
+  async updateProductImages(id: string, imageFileName: string[], req: Request) {
+    try {
+      const getProduct = await this._prodRepo.findOne({
+        where: {
+          id: id,
+          deleted_at: IsNull(),
+        },
+      });
+
+      if (!getProduct)
+        return this._res.generateResponse(
+          HttpStatus.BAD_REQUEST,
+          'Invalid Product id',
+          null,
+          req,
+        );
+
+      const getAllImagaes = await this._productImageRepo.find({
+        where: {
+          product: {
+            id: id,
+          },
+        },
+      });
+
+      const extractOriginalFilePath = getAllImagaes.map((imageUrl) => {
+        return imageUrl.image_url.replace('http://localhost:3000/api/v1', '.');
+      });
+      const delFile = extractOriginalFilePath.forEach(async (item) => {
+        return await this.deleteFile(item, req);
+      });
+
+      getAllImagaes.forEach(async (item) => {
+        await this._productImageRepo
+          .createQueryBuilder('ProductImage')
+          .delete()
+          .where('image_url = :imageurl', { imageurl: item.image_url })
+          .execute();
+      });
+
+      const images = imageFileName.map((filename) => {
+        const image = new ProductImage();
+        (image.image_url = `http://localhost:3000/api/v1/uploads/${filename}`),
+          (image.product = getProduct);
+        return image;
+      });
+
+      const create = this._productImageRepo.create(images);
+      await this._productImageRepo.save(create);
+
+      return this._res.generateResponse(
+        HttpStatus.OK,
+        'Product Images is updated successfully',
+        [],
+        req,
+      );
+    } catch (error) {
+      return this._res.generateError(error, req);
+    }
   }
 
   async remove(id: string, req: Request) {
@@ -190,6 +306,22 @@ export class ProductService {
           id: id,
           deleted_at: IsNull(),
         },
+        relations: {
+          category: true,
+          brand: true,
+          images: true,
+        },
+        select: {
+          category: {
+            name: true,
+          },
+          brand: {
+            name: true,
+          },
+          images: {
+            image_url: true,
+          },
+        },
       });
 
       if (!getProduct)
@@ -201,6 +333,21 @@ export class ProductService {
         );
 
       return getProduct;
+    } catch (error) {
+      return this._res.generateError(error, req);
+    }
+  }
+
+  async deleteFile(filePath: string, req: Request) {
+    try {
+      const fullPath = path.resolve(filePath);
+      if (fullPath) {
+        if (await fs.pathExists(fullPath)) {
+          await fs.remove(fullPath);
+        } else {
+          throw new NotFoundException('File not found');
+        }
+      }
     } catch (error) {
       return this._res.generateError(error, req);
     }

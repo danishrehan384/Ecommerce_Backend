@@ -7,16 +7,16 @@ import {
   Param,
   Delete,
   UseInterceptors,
-  UploadedFile,
   Req,
   Res,
   BadRequestException,
   UseGuards,
   UploadedFiles,
+  Put,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { extname } from 'path';
@@ -27,7 +27,10 @@ import {
   ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
-import { productUploadSchema } from 'utils/product-upload.schema';
+import {
+  imageUpdateSchema,
+  productUploadSchema,
+} from 'utils/product-upload.schema';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Express, Request } from 'express';
 import { RoleGuard } from 'src/Auth/Guards/role.guard';
@@ -93,8 +96,54 @@ export class ProductController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productService.update(+id, updateProductDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+    @Req() req,
+  ) {
+    return this.productService.update(id, updateProductDto, req);
+  }
+
+  @Put('/images/:id')
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary:
+      'Upload multiple files ! Note: File must be in JPG, JGEP and PNG Format & file size more than 2 mb',
+  })
+  @ApiBody(imageUpdateSchema)
+  @UseInterceptors(
+    FilesInterceptor('images', 5, {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = `${uuidv4()}${extname(file.originalname)}`;
+          cb(null, uniqueSuffix);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedMimeTypes.includes(file.mimetype)) {
+          return cb(
+            new BadRequestException('Only JPG, JPEG and PNG files are allowed'),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 2 * 1024 * 1024,
+      },
+    }),
+  )
+  updateProductImages(
+    @Param('id') id: string,
+    @Req() req,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    const filesname = files.map((file) => {
+      return file.filename;
+    });
+    return this.productService.updateProductImages(id, filesname, req);
   }
 
   @Delete(':id')

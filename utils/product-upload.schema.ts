@@ -31,3 +31,19 @@ export const productUploadSchema = {
     },
   },
 };
+
+export const imageUpdateSchema = {
+  description: 'File upload with additional data',
+  schema: {
+    type: 'object',
+    properties: {
+      images: {
+        type: 'array',
+        items: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  },
+};
