@@ -1,6 +1,5 @@
 import {
   Controller,
-  Get,
   Post,
   Body,
   Patch,
@@ -14,12 +13,12 @@ import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { Request } from 'express';
 import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Customer') 
 @Controller('customer')
-@ApiTags('Customer')
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
-  @Post('/signup ')
+  @Post('/signup')
   create(@Body() createCustomerDto: CreateCustomerDto, @Req() req: Request) {
     return this.customerService.create(createCustomerDto, req);
   }

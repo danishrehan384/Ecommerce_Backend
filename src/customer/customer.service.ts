@@ -7,7 +7,6 @@ import { User } from 'src/Entities/user.entity';
 import { IsNull, Repository } from 'typeorm';
 import { ResponseService } from 'src/Shared/services/response.service';
 import * as bcrypt from 'bcrypt';
-import { hash } from 'crypto';
 
 @Injectable()
 export class CustomerService {
