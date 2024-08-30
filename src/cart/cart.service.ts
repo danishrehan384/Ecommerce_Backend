@@ -41,83 +41,47 @@ export class CartService {
           req,
         );
 
-      const isCartAlreadyExist = await this._redis.get(cartKey);
+      let cart = await this._redis.get(cartKey);
 
-      let items: CartItemDto = {
-        id: uuidv4(),
-        productid: productid,
-        quantity: !quantity ? 1 : quantity,
-        price: isProductExist.price,
-      };
-
-      if (!isCartAlreadyExist) {
-        const totalPrice = isProductExist.price * items.quantity;
-        let cart = {
+      if (!cart) {
+        cart = {
           userid: userid,
-          items: [items],
-          total_price: totalPrice,
+          items: [],
+          total_price: 0,
           created_at: new Date(),
           updated_at: new Date(),
         };
-        await this._redis.set(cartKey, cart);
-        const getCart = await this._redis.get(cartKey);
-
-        return this._res.generateResponse(
-          HttpStatus.OK,
-          'cart added successfully',
-          getCart,
-          req,
-        );
       }
 
-      const findItemsInCart = isCartAlreadyExist.items;
-      for (const item of findItemsInCart) {
-        if (item.productid === productid) {
-          item.quantity += quantity ? quantity : 1;
-          let totalPrice = item.quantity * item.price;
+      const existingItemIndex = cart.items.findIndex(
+        (i) => i.productid === productid,
+      );
 
-          const updatedItems = {
-            id: item.id,
-            productid: item.productid,
-            quantity: item.quantity,
-            price: item.price,
-          };
-
-          const updatedCart = {
-            userid: isCartAlreadyExist.userid,
-            items: [updatedItems],
-            total_price: totalPrice,
-            created_at: isCartAlreadyExist.created_at,
-            updated_at: new Date(),
-          };
-
-          await this._redis.set(cartKey, updatedCart);
-        }else{
-          let newItem = {
-              id: uuidv4(),
-              productid: productid,
-              quantity: (!quantity) ? 1 : quantity,
-              price: isProductExist.price,
-          }
-          let totalPrice = isProductExist.price * newItem.price;
-
-          const updatedCart = {
-            userid: isCartAlreadyExist.userid,
-            items: [newItem],
-            total_price: totalPrice,
-            created_at: new Date(),
-            updated_at: new Date(),
-          };
-
-          await this._redis.set(cartKey, updatedCart);
-        }
+      if (existingItemIndex > -1) {
+        cart.items[existingItemIndex].quantity += quantity || 1;
+        cart.items[existingItemIndex].price = isProductExist.price;
+      } else {
+        cart.items.push({
+          id: uuidv4(),
+          productid: productid,
+          quantity: quantity || 1,
+          price: isProductExist.price,
+        });
       }
+
+      cart.total_price = cart.items.reduce((total, item) => {
+        return total + item.quantity * item.price;
+      }, 0);
+
+      cart.updated_at = new Date();
+
+      await this._redis.set(cartKey, cart);
 
       const getCart = await this._redis.get(cartKey);
 
       return this._res.generateResponse(
         HttpStatus.OK,
-        'cart added successfully',
+        'cart item added successfully',
         getCart,
         req,
       );

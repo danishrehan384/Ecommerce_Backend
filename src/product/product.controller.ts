@@ -60,7 +60,7 @@ export class ProductController {
         },
       }),
       fileFilter: (req, file, cb) => {
-        const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/jfif'];
         if (!allowedMimeTypes.includes(file.mimetype)) {
           return cb(
             new BadRequestException('Only JPG, JPEG and PNG files are allowed'),
